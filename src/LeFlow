@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #-----------------------------------------------------------------------------
 #Copyright (c) 2018 Daniel Holanda Noronha, Bahar Salehpour, Steve Wilton
 #{danielhn,bahars,stevew}@ece.ubc.ca
@@ -22,7 +23,6 @@
 #WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #---------------------------------------------------------------------------
 
-#!/usr/bin/env python
 import subprocess, os, shutil, sys
 import additionalOptions as options
 import argparse
@@ -37,7 +37,7 @@ parser.add_argument('file_name', type=str,
 parser.add_argument('--modelsim', action='store_true',
                     help='If specified, modelsim will run to test generated hardware.')
 parser.add_argument('--modelsim_only', action = 'store_true',
-		    help='If specified, only modelsim will run. LeFlow will not compile')
+            help='If specified, only modelsim will run. LeFlow will not compile')
 args = parser.parse_args()
 
 
@@ -45,7 +45,7 @@ args = parser.parse_args()
 ########## Configurations ##########
 ####################################
 python_path="/usr/bin/python"
-legup_examples_folder="/home/legup/legup-debug/examples/"
+legup_examples_folder="/home/danielhn/legup-debug/examples/"
 
 ####################################
 ###### Internal Configurations #####
@@ -161,7 +161,7 @@ def run_modelsim():
             warning_num = line.split()[-1]
             if error_num != '0,':
                 print("Encountered {} error(s) in the modelsim run. Please run modelsim using 'make v' in the project file directory to investiage".format(error_num))
-            	return False
+                return False
             if warning_num != '0':
                 print("Encountered {} warning(s) in the modelsim run. Please run modelsim using 'make v' in the project file directory to investiage".format(warning_num))
                 return False
@@ -169,8 +169,8 @@ def run_modelsim():
         if "Cycles" in line:
             cycles = line.split()[-1]
             print("Clock cycles required: {}".format(cycles))
-		
-	return True
+        
+    return True
 
 ###############################################################################
 # PROGRAM START

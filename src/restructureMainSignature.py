@@ -208,7 +208,13 @@ def processRetval(retval):
     # Then, get the text of the return value
     for idx,instr in enumerate(ir):
         if "@"+retval in instr:
-            retval_text = instr[instr.find("["):instr.rfind("]")+1]
+            if "[" not in instr:
+                # We are only returning a single variable
+                returning_single_native=True
+                retval_text=instr[:]
+                break
+            else:
+                retval_text = instr[instr.find("["):instr.rfind("]")+1]
             break
 
     # Get the dataype and dimension
@@ -219,6 +225,8 @@ def processRetval(retval):
     elif "float" in retval_text:
         retval_dataType="float"
     retval_dim=retval_text.count("[")
+    if returning_single_native:
+        retval_text=retval_dataType
 
     for idx,instr in enumerate(ir):
         # Make sure that main instruction is returning the right datatype
