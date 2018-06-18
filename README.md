@@ -5,6 +5,10 @@ LeFLow is an open-source tool-flow that maps numerical computation models writte
 to synthesizable hardware. Our flow bridges Google's XLA compiler LegUp high-level synthesis tool to
 automatically generate verilog from a Tensorflow specification.
 
+## Demo video
+
+[![LeFLow demo video](https://github.com/danielholanda/LeFlow/blob/master/img/LeFlow_thumbnail.png?raw=true)](https://www.youtube.com/watch?v=y76_RIyq4TM "LeFlow demo video")
+
 ## Installing dependencies
 
 ### LegUp
