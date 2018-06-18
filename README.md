@@ -26,7 +26,7 @@ LeFlow makes some minor changes on Tensorflow to ensure that only Kernels suppor
 To begin running examples with LeFlow tool, do the following:
 - Enter the ./test directory and select an example directory (i.e. myAdd)
 - To generate hardware from Tensorflow implementation run
-	> ../../src/LeFlow myAdd.py -> Generate hardware from Tensorflow implementation
+	> ../../src/LeFlow myAdd.py
 - To test generated hardware using Modelsim run
 	> ../../src/LeFlow myAdd.py --modelsim_only  
 - To do both above actions with a single command, run 
