@@ -19,6 +19,10 @@ LeFlow was built to be compatible with LegUp 4.0. We recommend downloading the v
 
 LeFlow makes some minor changes on Tensorflow to ensure that only Kernels supported by LegUp are used by Tensorflow's XLA. To install the modified version of Tensorflow in the Legup 4.0 virtual machine simply "pip install" the .whl file located in our src folder. Instructions for compiling Tensorflow from scratch with our changes are comming soon.  
 
+### LeFlow settings
+
+Before running LeFlow for the first time go to src\LeFlow and set up your python path and the examples directory of Legup.
+
 ## Getting Started
 
 ### Running a single example
