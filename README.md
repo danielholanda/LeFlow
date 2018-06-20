@@ -17,11 +17,20 @@ LeFlow was built to be compatible with LegUp 4.0. We recommend downloading the v
 
 ### Tensorflow
 
-LeFlow makes some minor changes on Tensorflow to ensure that only Kernels supported by LegUp are used by Tensorflow's XLA. To install the modified version of Tensorflow in the Legup 4.0 virtual machine simply "pip install" the .whl file located in our src folder. Instructions for compiling Tensorflow from scratch with our changes are comming soon.  
+LeFlow makes some minor changes on Tensorflow to ensure that only Kernels supported by LegUp are used by Tensorflow's XLA. To install the modified version of Tensorflow in the Legup 4.0 virtual machine follow the instructions below.
+```
+sudo apt-get install python-pip
+sudo python -m pip install --upgrade pip
+sudo pip install tensorflow-1.6.0-cp27-cp27mu-linux_x86_64.whl
+```
+Instructions for compiling Tensorflow from scratch with our changes are comming soon.  
 
 ### LeFlow settings
 
-Before running LeFlow for the first time go to src\LeFlow and set up your python path and the examples directory of Legup.
+Before running LeFlow for the first time go to src\LeFlow and set up your python path and the examples directory of Legup. It is also important to make the LeFlow file an executable using the command
+```
+chmod +x LeFlow
+```
 
 ## Getting Started
 
@@ -30,16 +39,24 @@ Before running LeFlow for the first time go to src\LeFlow and set up your python
 To begin running examples with LeFlow tool, do the following:
 - Enter the ./test directory and select an example directory (i.e. myAdd)
 - To generate hardware from Tensorflow implementation run
-	> ../../src/LeFlow myAdd.py
+    ``` 
+    ../../src/LeFlow myAdd.py
+    ```
 - To test generated hardware using Modelsim run
-	> ../../src/LeFlow myAdd.py --modelsim_only  
+     ```
+     ../../src/LeFlow myAdd.py --modelsim_only  
+     ``` 
 - To do both above actions with a single command, run 
-	> ../../src/LeFlow myAdd.py --modelsim 
+     ``` 
+     ../../src/LeFlow myAdd.py --modelsim 
+     ``` 
 
 ### Running all tests
 
 - To run all the tests at once, go into the ./test directory and run
-	> python test_leflow.py
+    ``` 
+    python test_leflow.py
+    ``` 
 
 ## Contents:
 - src -- includes source code for LeFlow
