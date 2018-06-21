@@ -205,6 +205,7 @@ def processRetval(retval):
             ir.pop(idx)
             break
 
+	returning_single_native=False
     # Then, get the text of the return value
     for idx,instr in enumerate(ir):
         if "@"+retval in instr:

@@ -45,8 +45,11 @@ args = parser.parse_args()
 ########## Configurations ##########
 ####################################
 python_path="/usr/bin/python"
-legup_examples_folder="/home/danielhn/legup-debug/examples/"
-
+legup_examples_folder="/home/legup/legup-4.0/examples/"
+if not os.path.exists(legup_examples_folder):
+	print("ERROR: Legup examples folder is not properly set. To edit, open the tool by typing <vi LeFlow> from src directory and editing the variable 'legup_examples_folder', and please include a '/' after the name of the directory")
+	print("INFO: Exiting LeFlow.")
+	exit()
 ####################################
 ###### Internal Configurations #####
 ####################################
@@ -69,7 +72,7 @@ FNULL = open(os.devnull, 'w')
 def run_leflow(tf_file):
 
     # Create folder and generate Makefile
-    print("Creating project...") 
+    print("INFO: Creating project...") 
     if os.path.exists(project_folder):
         shutil.rmtree(project_folder, ignore_errors=True)
     os.makedirs(project_folder)
@@ -84,71 +87,71 @@ def run_leflow(tf_file):
         shutil.copy(TOOL_PATH+"/ip/"+ip,project_folder)
 
     # Clean folder to erase previously generated files
-    print("Cleaning previous files...")
+    print("INFO: Cleaning previous files...")
     subprocess.Popen(["make","clean", "-C",project_folder],stdout=FNULL,stderr=FNULL).wait()
 
     # Generate IR from tensorflow
-    print("Generating IR from tensorflow...")
+    print("INFO: Generating IR from tensorflow...")
     my_env = os.environ.copy()
     my_env["TF_XLA_FLAGS"]=XLA_flags
     subprocess.Popen([python_path, tf_file ],env=my_env,stderr=FNULL).wait()
 
     # Remove unused files and name things properly
-    print("Cleaning unused dumped files...")
+    print("INFO: Cleaning unused dumped files...")
     shutil.copy(project_folder+"ir/ir-cluster_0__XlaCompiledKernel_true__XlaNumConstantArgs_0__XlaNumResourceArgs_0__module-with-opt.ll",project_folder+project_name+"_ir_1.ll")
     #shutil.rmtree(project_folder+"ir/", ignore_errors=True)
 
     # Convert to old LLVM syntax (Tensorflow and LegUp use different versions of LLVM)
-    print("Converting between LLVM versions...")
+    print("INFO: Converting between LLVM versions...")
     subprocess.Popen([python_path,TOOL_PATH+"/llvmSyntaxDowngrade.py",project_folder+project_name+"_ir_1.ll",project_folder+project_name+"_ir_2.ll"]).wait()
 
-    print("Running first batch of optimizations before unrolling...")
+    print("INFO: Running first batch of optimizations before unrolling...")
     subprocess.Popen(["llvm-as",project_folder+project_name+"_ir_2.ll"]).wait()
     myOptimizations=['-no-aa', '-basicaa', '-notti', '-verify', '-lower-expect', '-targetlibinfo', '-no-aa', '-tbaa', '-verify', '-ipsccp', '-globalopt', '-deadargelim', '-inline-cost', '-inline', '-functionattrs', '-early-cse', '-lazy-value-info', '-simplifycfg', '-reassociate', '-loop-simplify', '-lcssa', '-loop-rotate', '-loop-unswitch', '-scalar-evolution', '-indvars', '-loop-deletion', '-loop-unroll', '-memdep', '-domtree', '-gvn', '-memdep', '-memcpyopt', '-sccp', '-jump-threading', '-correlated-propagation', '-domtree', '-dse', '-scalar-evolution', '-adce', '-simplifycfg', '-lcssa', '-branch-prob', '-scalar-evolution', '-loop-vectorize', '-instcombine', '-loop-simplify', '-strip-dead-prototypes', '-globaldce']
     subprocess.Popen(["opt"]+myOptimizations+[project_folder+project_name+"_ir_2.bc","-o",project_folder+project_name+"_ir_3.bc"]).wait()
     subprocess.Popen(["llvm-dis",project_folder+project_name+"_ir_3.bc"]).wait()
 
     # Unrolling loops
-    print("Unrolling and Inlining according to user, simplifying elementary branches and optimizing away other values...")
+    print("INFO: Unrolling and Inlining according to user, simplifying elementary branches and optimizing away other values...")
     subprocess.Popen(["llvm-as",project_folder+project_name+"_ir_3.ll"]).wait()
     subprocess.Popen(["opt","-loop-unroll","-unroll-threshold="+options.getUnrollThreshold(project_folder),"-inline-threshold="+options.getInlineThreshold(project_folder),"-simplifycfg","-early-cse", project_folder+project_name+"_ir_3.bc","-o",project_folder+project_name+"_ir_4.bc"]).wait()
     
     subprocess.Popen(["llvm-dis",project_folder+project_name+"_ir_4.bc"]).wait()
 
     # Restructure function signature, change variables scope and reorganizes code
-    print("Restructuring the IR signature...")
+    print("INFO: Restructuring the IR signature...")
     subprocess.Popen([python_path,TOOL_PATH+"/restructureMainSignature.py",project_folder+project_name+"_ir_4.ll",project_folder+project_name+"_ir_5.ll"]).wait()
 
     # Reqrites unsupported operations 
-    print("Rewriting unsupported operations...")
+    print("INFO: Rewriting unsupported operations...")
     subprocess.Popen([python_path,TOOL_PATH+"/restructureOperations.py",project_folder+project_name+"_ir_5.ll",project_folder+project_name+"_ir_6.ll"]).wait()
 
     # Partitioning the memories
-    print("Partitioning arrays...")
+    print("INFO: Partitioning arrays...")
     subprocess.Popen([python_path,TOOL_PATH+"/memBank.py",project_folder+project_name+"_ir_6.ll",project_folder+project_name+"_ir_7.ll",project_folder+"leflowOptions/membank.config"]).wait()
 
     # Convert human-readable .ll file to bitcode (.bc file)
-    print("Converting human-readable .ll file to bitcode...")
+    print("INFO: Converting human-readable .ll file to bitcode...")
     subprocess.Popen(["llvm-as",project_folder+project_name+"_ir_7.ll"]).wait()
     shutil.move(project_folder+project_name+"_ir_7.bc", project_folder+project_name+".prelto.1.bc")
 
     # Start LegUp compilation
-    print("Starting LegUp Compilation...")
+    print("INFO: Starting LegUp Compilation...")
     subprocess.Popen(["make", "-C",project_folder],stdout=FNULL,stderr=FNULL).wait()
 
     # Instrumenting verilog testbench
-    print("Instrumenting testbench and mapping args and temps")
+    print("INFO: Instrumenting testbench and mapping args and temps")
     subprocess.Popen([python_path,TOOL_PATH+"/postSynthesis.py",project_folder+project_name+".v"]).wait()
 
 
-    print("DONE!")
+    print("INFO: DONE!")
     return True
 
 ####################################
 ############# Test Flow ############
 ####################################
 def run_modelsim():
-    print("Starting Modelsim...")
+    print("INFO: Starting Modelsim...")
 
     command = "make v -C {}".format(project_folder)
     modelsim_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None, shell=True)
@@ -160,15 +163,15 @@ def run_modelsim():
             error_num = line.split()[-3]
             warning_num = line.split()[-1]
             if error_num != '0,':
-                print("Encountered {} error(s) in the modelsim run. Please run modelsim using 'make v' in the project file directory to investiage".format(error_num))
+                print("ERROR: Encountered {} error(s) in the modelsim run. Please run modelsim using 'make v' in the project file directory to investiage".format(error_num))
                 return False
             if warning_num != '0':
-                print("Encountered {} warning(s) in the modelsim run. Please run modelsim using 'make v' in the project file directory to investiage".format(warning_num))
+                print("WARNING: Encountered {} warning(s) in the modelsim run. Please run modelsim using 'make v' in the project file directory to investiage".format(warning_num))
                 return False
 
         if "Cycles" in line:
             cycles = line.split()[-1]
-            print("Clock cycles required: {}".format(cycles))
+            print("INFO: Clock cycles required: {}".format(cycles))
         
     return True
 
