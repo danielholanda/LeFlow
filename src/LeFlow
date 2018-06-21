@@ -45,7 +45,8 @@ args = parser.parse_args()
 ########## Configurations ##########
 ####################################
 python_path="/usr/bin/python"
-legup_examples_folder="/home/legup/legup-4.0/examples/"
+legup_examples_folder="PATH_TO_LEGUP/examples/"
+
 if not os.path.exists(legup_examples_folder):
 	print("ERROR: Legup examples folder is not properly set. To edit, open the tool by typing <vi LeFlow> from src directory and editing the variable 'legup_examples_folder', and please include a '/' after the name of the directory")
 	print("INFO: Exiting LeFlow.")
@@ -138,6 +139,12 @@ def run_leflow(tf_file):
     # Start LegUp compilation
     print("INFO: Starting LegUp Compilation...")
     subprocess.Popen(["make", "-C",project_folder],stdout=FNULL,stderr=FNULL).wait()
+    if not os.path.isfile(project_folder+project_name+".v"):
+        print("ERROR: Legup failed to generate Verilog")
+        print("INFO: Exiting LeFlow.")
+        exit()
+    else:
+        print("INFO: Verilog file generated successfully")
 
     # Instrumenting verilog testbench
     print("INFO: Instrumenting testbench and mapping args and temps")
