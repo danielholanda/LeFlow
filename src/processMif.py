@@ -27,6 +27,11 @@
 import numpy as np
 import struct, inspect, os, sys
 
+parser = argparse.ArgumentParser(description='LeFlow')
+parser.add_argument('mem_file', nargs='?', default=None)
+args = parser.parse_args()
+
+
 def toHex(num):
     return ''.join(hex(ord(c)).replace('0x', '').rjust(2, '0').upper() for c in struct.pack('!f', num))
 
@@ -70,11 +75,12 @@ def dumpMem(mem):
             print(toFloat(content))
 
 def printModelsimDump(mem):
-    f= open(mem,"r+")
-    for line in f: 
-        if "/" not in line:
-            print(toFloat(line[:-1]))
+    with open(mem, "r+") as f:
+        for line in f: 
+            if "/" not in line:
+                print(toFloat(line[:-1]))
+        f.close()
 
 # Dump modelsim memory if we receive an argument with its path
-if len(sys.argv)==2:
-    printModelsimDump(sys.argv[1])
+if args.mem_file:
+    printModelsimDump(args.mem_file)

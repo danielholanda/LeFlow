@@ -13,7 +13,7 @@ with tf.Session() as sess:
         y=x*x
 
 
-    result = sess.run(y, {x: [1., 2., 4.]}) #number set 2
+    result = sess.run(y, {x: [3.,5.,6.]}) #number set 1
     for res in result:
         print(res)
     #print(result)
@@ -21,4 +21,4 @@ with tf.Session() as sess:
 
 
     # Generate test memory
-    mif.createMem([np.array([1., 2., 4.])]) #number set 2
+    mif.createMem([np.array([3.,5.,6.])]) #number set 1
