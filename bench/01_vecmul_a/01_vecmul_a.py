@@ -25,14 +25,24 @@
 
 import tensorflow as tf
 import numpy as np
+import sys
+sys.path.append('../../src')
+import processMif as mif
+
 
 tf.logging.set_verbosity(tf.logging.INFO)
 size=8
+
+in_a = np.random.rand(size)
+in_b = np.random.rand(size)
+mif.createMem([in_a,in_b])
+
 with tf.Session() as sess:
 	x = tf.placeholder(tf.float32,[size])
 	z = tf.placeholder(tf.float32,[size])
 	with tf.device("device:XLA_CPU:0"):
 		y=x*z
 
-	result = sess.run(y, {x: [1.]*size, z: [6.]*size})
+	result = sess.run(y, {x: in_a, z: in_b})
+	np.save("tf_result.npy" ,result)
 	print(result)

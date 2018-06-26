@@ -45,12 +45,12 @@ args = parser.parse_args()
 ########## Configurations ##########
 ####################################
 python_path="/usr/bin/python"
-legup_examples_folder="PATH_TO_LEGUP/examples/" 
- 
+legup_examples_folder="/home/legup/legup-4.0/examples/"
+
 if not os.path.exists(legup_examples_folder):
-	print("ERROR: Legup examples folder is not properly set. To edit, open the tool by typing <vi LeFlow> from src directory and editing the variable 'legup_examples_folder', and please include a '/' after the name of the directory")
-	print("INFO: Exiting LeFlow.")
-	exit()
+    print("ERROR: Legup examples folder is not properly set. To edit, open the tool by typing <vi LeFlow> from src directory and editing the variable 'legup_examples_folder', and please include a '/' after the name of the directory")
+    print("INFO: Exiting LeFlow.")
+    exit()
 ####################################
 ###### Internal Configurations #####
 ####################################
