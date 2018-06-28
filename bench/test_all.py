@@ -23,9 +23,10 @@
 #---------------------------------------------------------------------------
 
 
-import subprocess
-import os
-import time
+import subprocess, os, time, sys
+sys.path.append('../src')
+import processMif as mif
+import numpy as np
 
 start_time = time.time()
 
@@ -34,37 +35,42 @@ test_folders = ['01_vecmul_a']
 test_dir = os.getcwd() 
 
 for folder in test_folders:
-	print("\nRunning test for {}".format(folder))
+    print("\nRunning test for {}".format(folder))
 
-	os.chdir("./{}/".format(folder))
+    os.chdir("./{}/".format(folder))
 
-	#start leflow
-	command = "../../src/LeFlow {}.py".format(folder, folder)
-	leflow_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None, shell=True)
-	leflow_output = leflow_process.communicate()
+    #Generate Circuit
+    print("\tGenerating the circuit...")
+    command = "../../src/LeFlow {}.py".format(folder, folder)
+    leflow_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None, shell=True)
+    leflow_output = leflow_process.communicate()
 
-	leflow_output = leflow_output[0].splitlines()
-	for line in leflow_output:
-		if "DONE" in line:
-			print("Finished testing LeFlow for {}".format(folder)) 
+    leflow_output = leflow_output[0].splitlines()
+    for line in leflow_output:
+        if "DONE" in line:
+            print("\tFinished generating circuit") 
 
-	#start modelsim
-	command = "make v -C {}_files".format(folder)
-	modelsim_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None, shell=True)
-	modelsim_output = modelsim_process.communicate()
+    #start modelsim
+    print("\tTesting circuit using Modelsim...")
+    command = "make v -C {}_files".format(folder)
+    modelsim_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None, shell=True)
+    modelsim_output = modelsim_process.communicate()
 
-	modelsim_output = modelsim_output[0].splitlines()
-	for line in modelsim_output:
-		if "Cycles" in line:
-			cycles = line.split()[-1]
-			print("Clock cycles required: {}".format(cycles))
-			print("Finished testing Modelsim for {}".format(folder))
+    modelsim_output = modelsim_output[0].splitlines()
+    for line in modelsim_output:
+        if "Cycles" in line:
+            cycles = line.split()[-1]
+            print("\tClock cycles required: {}".format(cycles))
 
-	os.chdir(test_dir)
-	
+
+    modelsim_result = np.array(mif.getModelsimMem(folder+"_files/memory_dump.txt"))
+    tensorflow_result = np.load("tf_result.npy")
+    print("\tResults match: "+str(np.array_equal(modelsim_result, tensorflow_result)))
+    
+    os.chdir(test_dir)
 
 
 end_time = time.time()
 total_time = end_time - start_time
 print("Testing was done in {} seconds".format(round(total_time, 2)))
-			
+            

@@ -69,6 +69,14 @@ def dumpMem(mem):
             content=line[line.find(": ")+2:line.find(";")]
             print(toFloat(content))
 
+def getModelsimMem(mem):
+    memArray=[]
+    f= open(mem,"r+")
+    for line in f: 
+        if "/" not in line:
+            memArray.append(toFloat(line[:-1]))
+    return memArray
+
 def printModelsimDump(mem):
     f= open(mem,"r+")
     for line in f: 
