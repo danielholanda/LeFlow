@@ -26,18 +26,24 @@
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+sys.path.append('../../src')
+import processMif as mif
 
 # Configs
-image_width=8
-image_height=8
+image_width=32
+image_height=32
 
 #Prepare input array
-input_array = np.random.rand(1, image_width, image_height, 1)
+in_a = np.random.rand(1, image_width, image_height, 1)
+mif.createMem([in_a])
 
 with tf.Session() as sess:
 	# Create hardware for max pooling
 	x = tf.placeholder(tf.float32,[1, image_width, image_height, 1])
 	with tf.device("device:XLA_CPU:0"):
 		y=tf.layers.max_pooling2d(inputs=x, pool_size=[3, 3], strides=3)
-	sess.run(y,{x: input_array})
+	result = sess.run(y,{x: in_a})
+	np.save("tf_result.npy" ,result)
+	print(result)
 

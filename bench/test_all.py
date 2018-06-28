@@ -33,7 +33,7 @@ FNULL = open(os.devnull, 'w')
 
 start_time = time.time()
 
-test_folders = ['01_vecmul_a','02_vecmul_b','03_vecmul_b_f','04_dense_a','05_dense_b','06_softmax_a','07_softmax_b','08_softmax_b_f','09_conv2d_a','10_conv2d_a_f','11_conv2d_b']
+test_folders = ['01_vecmul_a','02_vecmul_b','03_vecmul_b_f','04_dense_a','05_dense_b','06_softmax_a','07_softmax_b','08_softmax_b_f','09_conv2d_a','10_conv2d_a_f','11_conv2d_b','12_maxp_a','13_maxp_b','14_maxp_b_f','15_thxprlsg']
 
 test_dir = os.getcwd() 
 

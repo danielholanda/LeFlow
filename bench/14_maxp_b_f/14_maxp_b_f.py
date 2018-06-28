@@ -25,14 +25,27 @@
 
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
+import sys
+sys.path.append('../../src')
+import processMif as mif
+import additionalOptions as options
 
-tf.logging.set_verbosity(tf.logging.INFO)
-size=8
+# Configs
+image_width=32
+image_height=32
+
+#Prepare input array
+in_a = np.random.rand(1, image_width, image_height, 1)
+mif.createMem([in_a])
 
 with tf.Session() as sess:
-	x = tf.placeholder(tf.float32,[size])
+	# Create hardware for max pooling
+	x = tf.placeholder(tf.float32,[1, image_width, image_height, 1])
 	with tf.device("device:XLA_CPU:0"):
-		y=tf.sigmoid(tf.nn.relu(tf.exp(tf.tanh(x))))
-
-	result = sess.run(y, {x: np.random.rand(size)})
+		y=tf.layers.max_pooling2d(inputs=x, pool_size=[3, 3], strides=3)
+	result = sess.run(y,{x: in_a})
+	np.save("tf_result.npy" ,result)
 	print(result)
+
+options.setUnrollThreshold(100000000)
