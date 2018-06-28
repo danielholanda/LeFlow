@@ -25,36 +25,36 @@
 
 import tensorflow as tf
 import numpy as np
+import sys
+sys.path.append('../../src')
+import processMif as mif
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
 
 # Network Parameters
 n_input = 1
-n_output=64
-
-
-# Store layers weight & bias
-weights = {
-    'h1': tf.Variable(tf.random_normal([n_input, n_output])),
-}
-biases = {
-    'b1': tf.Variable(tf.random_normal([n_output])),
-}
-
+n_output = 64
 
 # tf Graph input
 X = tf.placeholder(tf.float32, [None, n_input])
+weights = tf.placeholder(tf.float32, [n_input, n_output])
+biases = tf.placeholder(tf.float32, [n_output])
 
+in_x = np.random.rand(1,n_input)
+in_weights = np.random.rand(n_input, n_output)
+in_biases = np.random.rand(n_output)
+mif.createMem([in_weights,in_biases,in_x])
 
 # matmul must be an array of arrays but add can only be one array 
 with tf.Session() as sess:
     with tf.device("device:XLA_CPU:0"):
-    	aux = tf.matmul(X, weights['h1'])
-    	y = tf.add(biases['b1'], aux[0])
+    	aux = tf.matmul(X, weights)
+    	y = tf.add(biases, aux[0])
 
     sess.run(tf.global_variables_initializer())
-    result = sess.run(y,{X: [[3.]*n_input]})
+    result = sess.run(y,{X: in_x, weights: in_weights, biases: in_biases})
+    np.save("tf_result.npy" ,result)
     print(result)
 
 
