@@ -25,12 +25,23 @@
 
 import tensorflow as tf
 import numpy as np
+import sys
+sys.path.append('../../src')
+import processMif as mif
+import additionalOptions as options
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
+size=64
+in_x = np.random.rand(size)
+mif.createMem([in_x])
+
 with tf.Session() as sess:
-	x = tf.placeholder(tf.float32,[8])
+	x = tf.placeholder(tf.float32,[size])
 	with tf.device("device:XLA_CPU:0"):
 		y=tf.nn.softmax(x)
-	result = sess.run(y, {x: [1.,3.,5.,2.,1.,3.,5.,5.]})
+	result = sess.run(y, {x: in_x})
+	np.save("tf_result.npy" ,result)
 	print(result)
+
+options.setUnrollThreshold(100000000)

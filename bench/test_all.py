@@ -33,7 +33,7 @@ FNULL = open(os.devnull, 'w')
 
 start_time = time.time()
 
-test_folders = ['01_vecmul_a','02_vecmul_b','03_vecmul_b_f','04_dense_a','05_dense_b']
+test_folders = ['01_vecmul_a','02_vecmul_b','03_vecmul_b_f','04_dense_a','05_dense_b','06_softmax_a','07_softmax_b','08_softmax_b_f']
 
 test_dir = os.getcwd() 
 
@@ -82,7 +82,11 @@ for folder in test_folders:
 
     modelsim_result = np.array(mif.getModelsimMem(folder+"_files/memory_dump.txt"))
     tensorflow_result = np.load("tf_result.npy")
-    print("\tResults match: "+str(np.array_equal(modelsim_result, tensorflow_result)))
+    tensorflow_squared_mean = np.mean(np.square(tensorflow_result))
+    modelsim_squared_mean = np.mean(np.square(modelsim_result))
+    result_ratio = tensorflow_squared_mean/modelsim_squared_mean
+    match = (result_ratio>0.999 and result_ratio<1.001)
+    print("\tResults match: "+str(match))
     
     os.chdir(test_dir)
 
