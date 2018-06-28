@@ -28,6 +28,9 @@ sys.path.append('../src')
 import processMif as mif
 import numpy as np
 
+# Used for supressing silly messages
+FNULL = open(os.devnull, 'w')
+
 start_time = time.time()
 
 test_folders = ['01_vecmul_a']
@@ -48,10 +51,24 @@ for folder in test_folders:
     leflow_output = leflow_output[0].splitlines()
     for line in leflow_output:
         if "DONE" in line:
-            print("\tFinished generating circuit") 
+            print("\t\tFinished generating circuit") 
+
+    # Generate mems and test with tensorflow
+    print("\tGenerating new inputs and running Tensorflow with them...")
+    command = "/usr/bin/python {}.py".format(folder, folder)
+    leflow_output = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=FNULL, shell=True).communicate()
+
+    leflow_output = leflow_output[0].splitlines()
+    for line in leflow_output:
+        if "DONE" in line:
+            print("\t\tFinished generating circuit") 
+
+    # Move inputs to right folder
+    command = "cp "+folder+"_files/tfArgs/param*.mif "+folder+"_files/".format(folder, folder)
+    leflow_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None, shell=True)
 
     #start modelsim
-    print("\tTesting circuit using Modelsim...")
+    print("\tTesting circuit using Modelsim with new inputs...")
     command = "make v -C {}_files".format(folder)
     modelsim_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None, shell=True)
     modelsim_output = modelsim_process.communicate()
@@ -60,7 +77,7 @@ for folder in test_folders:
     for line in modelsim_output:
         if "Cycles" in line:
             cycles = line.split()[-1]
-            print("\tClock cycles required: {}".format(cycles))
+            print("\t\tClock cycles required: {}".format(cycles))
 
 
     modelsim_result = np.array(mif.getModelsimMem(folder+"_files/memory_dump.txt"))
