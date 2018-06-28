@@ -29,28 +29,30 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import string
 import sys
-sys.path.insert(0, '/home/danielhn/leflow/src')
-import additionalOptions as options
+sys.path.append('../../src')
+import processMif as mif
 
 size = 8
 outputs = 2
 
-weights_tensor=tf.Variable(tf.random_normal([3,3,1,outputs]))
 X = tf.placeholder(tf.float32, [1, size,size,1])
+weights = tf.placeholder(tf.float32, [3,3,1,outputs])
 
-original_image=np.random.rand(1,size,size,1)
-
+in_x = np.random.rand(1,size,size,1)
+in_weights = np.random.rand(3,3,1,outputs)
+mif.createMem([in_x,in_weights])
 
 with tf.Session() as sess:
     with tf.device("device:XLA_CPU:0"):
-        y = tf.nn.conv2d(X, weights_tensor, strides=[1, 1, 1, 1], padding='SAME')
+        y = tf.nn.conv2d(X, weights, strides=[1, 1, 1, 1], padding='SAME')
     sess.run(tf.global_variables_initializer())
-    result = sess.run(y,{X: original_image})
+    result = sess.run(y,{X: in_x, weights: in_weights})
+    np.save("tf_result.npy" ,result)
     print(result)
 
 
 
-options.setUnrollThreshold(100000000)
+
 
 
 
