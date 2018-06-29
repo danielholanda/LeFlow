@@ -32,6 +32,16 @@ Before running LeFlow for the first time go to src\LeFlow and set up your python
 chmod +x LeFlow
 ```
 
+### Testing your installation
+
+LeFlow comes to 15 building blocks that are contained inside of the tests folder and used for testing. You should try those tests first before jumping to the more complex examples. The automated testing will generate circuit, test it with Modelsim and make sure that the results match the original Tensorflow results.
+
+- To test your installation, go into the test directory and run
+    ``` 
+    python test_all.py
+    ``` 
+If one of the tests fail you have a problem with your installation. Please also make sure that the code works with Tesorflow before trying to generate a circuit using LeFlow.
+
 ## Getting Started
 
 ### Running a single example
@@ -50,13 +60,6 @@ To begin running examples with LeFlow tool, do the following:
      ``` 
      ../../src/LeFlow myAdd.py --modelsim 
      ``` 
-
-### Running all tests
-
-- To run all the tests at once, go into the ./test directory and run
-    ``` 
-    python test_leflow.py
-    ``` 
 
 ## Contents:
 - src -- includes source code for LeFlow
