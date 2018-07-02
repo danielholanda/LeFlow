@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import sys, random
-sys.path.insert(0, '/home/danielhn/leflow/src')
+sys.path.append('../../src')
 import additionalOptions as options
 
 # Configs

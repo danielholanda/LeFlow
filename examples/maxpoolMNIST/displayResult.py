@@ -23,57 +23,23 @@
 #---------------------------------------------------------------------------
 
 
-import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
+import sys
+sys.path.append('../../src')
 import processMif as mif
 
-tf.logging.set_verbosity(tf.logging.INFO)
+print("Please remember to generate the circuit using LeFlow and generate the results using Modelsim before trying to display the results")
 
+# Read result from modelsim
+result=[]
+f= open("maxpoolMNIST_files/memory_dump.txt","r+")
+for line in f: 
+    if "/" not in line:
+        result.append(mif.toFloat(line[:-1]))
 
-# Store layers weight & bias
-weights = {
-    # 5x5 conv, 1 input, 32 outputs
-    'wc1': tf.Variable(tf.random_normal([5, 5, 1, 4])),
-}
-
-
-# tf Graph input
-X = tf.placeholder(tf.float32, [1, 28,28,1])
-
-
-# matmul must be an array of arrays but add can only be one array 
-strides=1
-with tf.Session() as sess:
-    with tf.device("device:XLA_CPU:0"):
-        y = tf.nn.conv2d(X, weights['wc1'], strides=[1, 1, 1, 1], padding='SAME')
-
-    sess.run(tf.global_variables_initializer())
-    dummy_input=[np.random.rand(28,28,1)]
-    result = sess.run(y,{X: dummy_input})
-    print(result)
-    print(weights['wc1'].eval())
-
-    # Generate test memory
-    mif.createMem([dummy_input[0],weights['wc1'].eval()])
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Reshape and plot result
+first_array=np.reshape(result,[9,9])
+plt.imshow(first_array, cmap='gray', interpolation = 'none')
+plt.show()
 

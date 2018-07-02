@@ -22,13 +22,12 @@
 #WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #---------------------------------------------------------------------------
 
-
-#!/usr/bin/env python
-
 import tensorflow
 import numpy as np
-import processMif as mif
 from tensorflow.examples.tutorials.mnist import input_data
+import sys
+sys.path.append('../../src')
+import processMif as mif
 
 # Load the MNIST data set
 mnist_data = input_data.read_data_sets("MNIST_data/", one_hot=True)
@@ -54,9 +53,11 @@ train_step = optimizer.minimize(cross_entropy)
 # Initialization
 init = tensorflow.global_variables_initializer()
 
-
-epochs = 1000
+# Starting Tensorflow XLA session
 with tensorflow.Session() as session:
+
+    # Training using MNIST dataset
+    epochs = 1000
     session.run(init)
     for _ in range(epochs):
         batch_x, batch_y = mnist_data.train.next_batch(100)

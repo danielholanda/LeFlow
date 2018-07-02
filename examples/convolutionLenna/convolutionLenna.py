@@ -25,16 +25,12 @@
 
 import tensorflow as tf
 import numpy as np
-import processMif as mif
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import string
-
-# Converts image to gray scale
-def rgb2gray(rgb):
-    r, g, b = rgb[:,:,0], rgb[:,:,1], rgb[:,:,2]
-    gray = (0.2989 * r + 0.5870 * g + 0.1140 * b)
-    return gray
+import sys
+sys.path.append('../../src')
+import processMif as mif
 
 # List of different filters
 blur=[[[[ 0.11111111111 ]],[[0.11111111111 ]],[[ 0.11111111111 ]]],[[[ 0.11111111111 ]],[[0.11111111111 ]],[[0.11111111111 ]]],[[[ 0.11111111111 ]],[[ 0.11111111111]],[[ 0.11111111111]]]]
@@ -53,24 +49,18 @@ weights_tensor=tf.Variable(tf.convert_to_tensor(weights, dtype=tf.float32))
 
 # Placeholder for graph input
 X = tf.placeholder(tf.float32, [1, 512,512,1])
-
-
-#img=rgb2gray(mpimg.imread('/home/danielhn/Desktop/lena.png'))
-#img=rgb2gray(mpimg.imread('/home/danielhn/Desktop/taxi.png'))
-img=rgb2gray(mpimg.imread('/home/danielhn/Desktop/bike_simple.png'))
+img=mpimg.imread('lenna.png')
 original_image=np.reshape(img,[1,512,512,1])
 
 
-# matmul must be an array of arrays but add can only be one array 
-
 with tf.Session() as sess:
+
+	# Generating circuit
     with tf.device("device:XLA_CPU:0"):
         y = tf.nn.conv2d(X, weights_tensor, strides=[1, 1, 1, 1], padding='SAME')
-
     sess.run(tf.global_variables_initializer())
     result = sess.run(y,{X: original_image})
     print(result)
-
 
     # Plotting result
     result = np.reshape(result,[512,512,num_outputs])

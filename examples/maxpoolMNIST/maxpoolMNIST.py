@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import sys 
-sys.path.insert(0, '/home/danielhn/Desktop/leflow/src')
+sys.path.append('../../src')
 import processMif as mif
 from tensorflow.examples.tutorials.mnist import input_data
 
