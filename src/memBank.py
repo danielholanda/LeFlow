@@ -26,6 +26,7 @@
 import sys, re, os, inspect, shutil
 
 def getArrayInfo(partition_name):
+    """ Returns the array dimensions and the datatype """
     for instr in ir:
         if "@"+partition_name+" =" in instr:
             dim =  instr[instr.find("["):instr.find("zeroinitializer")].replace('[','').replace(']','').replace('i64','').replace('float','').replace('i32','').replace('x','').split()
@@ -41,22 +42,26 @@ def getArrayInfo(partition_name):
             return [ int(x) for x in dim ], dataType
 
 
-def readIR():
-    ir=[]
-    while True:
-        # Read line by line and exit when done
-        line = f_in.readline()
-        if not line:
-            break
-        ir.append(line)
-    return ir
+def readIR(input_file):
+    """ Reads the IR file and saves it into a variable """
+    with open(input_file,'r') as f_in:
+        ir=[]
+        while True:
+            # Read line by line and exit when done
+            line = f_in.readline()
+            if not line:
+                break
+            ir.append(line)
+        return ir
 
-# Write IR data back to file
-def writeIR():
-    for line in ir:
-        f_out.write(line)
+def writeIR(ir, output_file):
+    """ Used to write the IR back to a file after everything has been processed """
+    with open(output_file,'w') as f_out:
+        for line in ir:
+            f_out.write(line)
 
-def getCongif():
+def getConfig(ir, memconfig_file_path):
+    """ Gets the arrays to be partitioned from the memconfig file """
     if not os.path.isfile(memconfig_file_path):
         print("\tUser did not specify any arrays to partition")
         return []
@@ -75,6 +80,7 @@ def getCongif():
     return partitions
 
 def generateDimText(dim,dataType):
+    """ This is used to generate a string with the new dimensions of the array """
     text=""
     for d in dim:
         text=text+" ["+str(d)+" x"
@@ -83,6 +89,7 @@ def generateDimText(dim,dataType):
 
 
 def createPartitions(partition_name,partition_values,partition_dim,dataType):
+    """ This is used to create a global partition at the top of the IR file"""
     for idx,instr in enumerate(ir):
         if "@"+partition_name+" =" in instr:
             del ir[idx]
@@ -93,6 +100,7 @@ def createPartitions(partition_name,partition_values,partition_dim,dataType):
             break    
 
 def updateGEP(partition_name,partition_values,partition_dim,dataType,partitioned_dim):
+    """ All getelementptr operations associated with the original array need to be updated when a new partition is created """
     for idx,instr in enumerate(ir):
         if "@"+partition_name+"," in instr and "getelementptr"in instr:
 
@@ -131,61 +139,57 @@ def updateGEP(partition_name,partition_values,partition_dim,dataType,partitioned
                     new_indexes=new_indexes+", i64 "+current_indexes[i].replace(',','')
             ir[idx]=re.findall('(.*@\S*,)',ir[idx])[0] + new_indexes +"\n"#+ re.findall('.*i64 \d+(.*)',ir[idx])[0] +"\n"#+ ir[idx][:ir[idx].rfind(dataType)]
 
+def partitionMemories(ir):
+    """ Loop though all partitions (we might want to partition multiple memories of the same program) """
+    for mems in partitions:
+        partition_name=mems[0]
+        dimention_to_partition=int(mems[1])
+        settings=mems[2:][0]
+        dim, dataType = getArrayInfo(partition_name)
 
-# Receive input and output files
-input_file=sys.argv[1]
-output_file=sys.argv[2]
-memconfig_file_path=sys.argv[3]
+        # Settings for fully partitioning
+        if settings[0]=='*':
+            print("\tFully partitioning array "+partition_name)
+            partition_values=[[x] for x in xrange(dim[dimention_to_partition])]
 
-# Open input and output files 
-f_in = open(input_file,'r')
-f_out = open(output_file,'w')
+        # Settings for block and cyclic partitions
+        elif settings[0]=="b" or settings[0]=="c":
+            blocks=int(settings[1])
+            if blocks<1:
+                blocks=1
+            elif blocks>dim[dimention_to_partition]:
+                blocks=dim[dimention_to_partition]
 
-# We will cache all file in an list to make it simpler to move information around
-ir=readIR()
+            # Splitting the array in blocks
+            if settings[0]=="b":
+                print("\tPartitioning array "+partition_name+" in "+str(blocks)+" blocks of memory")
+                k, m = divmod(dim[dimention_to_partition], blocks)
+                partition_values = [range(i*k+min(i, m),(i+1)*k+min(i+1,m)) for i in xrange(blocks)]
 
-# Get partition config
-partitions = getCongif()
+            # Splitting the array cyclically
+            elif settings[0]=="c":
+                print("\tPartitioning array "+partition_name+" in "+str(blocks)+" memories cyclically")
+                partition_values = [range(dim[dimention_to_partition])[i::blocks] for i in xrange(blocks)]
 
-# Loop though all partitions (we might want to partition multiple memories of the same program)
-for mems in partitions:
-    partition_name=mems[0]
-    dimention_to_partition=int(mems[1])
-    settings=mems[2:][0]
-    dim, dataType = getArrayInfo(partition_name)
-
-    # Settings for fully partitioning
-    if settings[0]=='*':
-        print("\tFully partitioning array "+partition_name)
-        partition_values=[[x] for x in xrange(dim[dimention_to_partition])]
-
-    # Settings for block and cyclic partitions
-    elif settings[0]=="b" or settings[0]=="c":
-        blocks=int(settings[1])
-        if blocks<1:
-            blocks=1
-        elif blocks>dim[dimention_to_partition]:
-            blocks=dim[dimention_to_partition]
-
-        # Splitting the array in blocks
-        if settings[0]=="b":
-            print("\tPartitioning array "+partition_name+" in "+str(blocks)+" blocks of memory")
-            k, m = divmod(dim[dimention_to_partition], blocks)
-            partition_values = [range(i*k+min(i, m),(i+1)*k+min(i+1,m)) for i in xrange(blocks)]
-
-        # Splitting the array cyclically
-        elif settings[0]=="c":
-            print("\tPartitioning array "+partition_name+" in "+str(blocks)+" memories cyclically")
-            partition_values = [range(dim[dimention_to_partition])[i::blocks] for i in xrange(blocks)]
-
-    partition_dim=[dim[:dimention_to_partition]+[len(x)]+dim[dimention_to_partition+1:] for x in partition_values]
-    createPartitions(partition_name,partition_values,partition_dim,dataType)
-    updateGEP(partition_name,partition_values,partition_dim,dataType,dimention_to_partition)
+        partition_dim=[dim[:dimention_to_partition]+[len(x)]+dim[dimention_to_partition+1:] for x in partition_values]
+        createPartitions(partition_name,partition_values,partition_dim,dataType)
+        updateGEP(partition_name,partition_values,partition_dim,dataType,dimention_to_partition)
 
 
-# Write output file
-writeIR()
+if __name__ == '__main__':
+    # Receive input and output files
+    input_file=sys.argv[1]
+    output_file=sys.argv[2]
+    memconfig_file_path=sys.argv[3]
 
-# Close both files
-f_in.close()
-f_out.close()
+    # We will cache all file in an list to make it simpler to move information around
+    ir=readIR(input_file)
+
+    # Get partition config
+    partitions = getConfig(ir, memconfig_file_path)
+
+    # Partition the IR
+    partitionMemories(ir)
+
+    # Write output file
+    writeIR(ir, output_file)

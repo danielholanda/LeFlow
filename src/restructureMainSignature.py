@@ -22,11 +22,10 @@
 #WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #---------------------------------------------------------------------------
 
-
 import sys, json
 
-# Reorder other instructions based on a instruction that was removed
 def instrReorder(instr):
+    """ Reorder other instructions based on a instruction that was removed """
 
     # Find current and max instruction
     curr_instr=instr.split()[0][1:instr.find("=")-1]
@@ -43,22 +42,22 @@ def instrReorder(instr):
             if "%"+str(i) in ir[idx]:
                 safeReplace("%"+str(i),"%"+str(i-1),idx)
 
-#SafeReplace
 def safeReplace(old, new, idx):
+    """ Safely replace a string in a line of IR """
     ir[idx]=ir[idx].replace(old+" ",new+" ")
     ir[idx]=ir[idx].replace(old+",",new+",")
     ir[idx]=ir[idx].replace(old+"\n",new+"\n")
     ir[idx]=ir[idx].replace(old+")",new+")")
 
-# Checks if arg is in intruction
 def safeCheckArg(arg, instr):
+    """ Checks if arg is in intruction """
     if (arg+" " in instr) or (arg+"," in instr) or (arg+"\n" in instr) or (arg+")" in instr):
         return True
     else:
         return False
 
-# Deletes instruction and passes references to the rest of the IR
 def safelyDelete(parameter,key_operation,is_global=False):
+    """ Deletes instruction and passes references to the rest of the IR """ 
     keep_looking=True
     while keep_looking:
         keep_looking=False
@@ -88,8 +87,8 @@ def safelyDelete(parameter,key_operation,is_global=False):
             if instruction_to_process.split()[0][1:].isdigit():
                 instrReorder(instruction_to_process)
 
-# Deletes instruction and passes references to the rest of the IR
 def safelyDeleteNamed(parameter,key_operation):
+    """ Deletes instruction and passes references to the rest of the IR """
     keep_looking=True
     while keep_looking:
         keep_looking=False
@@ -111,8 +110,9 @@ def safelyDeleteNamed(parameter,key_operation):
                 if instruction_to_process.split()[0] in instr:
                     safeReplace(instruction_to_process.split()[0],"@"+parameter,idx)
 
-# Transforms inputs to global variables
 def promoteParamsToGlobal():
+    """ Transforms inputs to global variables """
+
     # Very similar to promoteTempsToGlobal
     safelyDelete("params","getelementptr")
     safelyDelete("params","bitcast")
@@ -150,8 +150,9 @@ def promoteParamsToGlobal():
 
     return temps_counter
 
-# Transforms inputs to global variables
 def promoteTempsToGlobal():
+    """ Transforms temporary variables to global variables """
+
     # The sequence is gep (optional), load to temps, gep (optional), bitcast to real type
     # We use the following operations to get "temps" in the bitcast to real var
     safelyDelete("temps","getelementptr")
@@ -190,12 +191,12 @@ def promoteTempsToGlobal():
 
     return temps_counter
 
-    
-# Even though we are able to simulate the circuit with modelsim perfectly, the
-# memories that we use are not mapped as outputs of the circuit, so Quartus will
-# optimize everything away. To avoid this, we return one element of the output 
-# array at the end of the computation. [A more elegant solution might exist]
 def processRetval(retval):
+    """ Even though we are able to simulate the circuit with modelsim perfectly, the
+    memories that we use are not mapped as outputs of the circuit, so Quartus will
+    optimize everything away. To avoid this, we return one element of the output 
+    array at the end of the computation. [A more elegant solution might exist]
+    """
 
     # First, remove Tensorflow's Retval
     # The sequence is either store OR bitcast, store
@@ -242,8 +243,8 @@ def processRetval(retval):
             ir.insert(idx, "  %leflow_gep = getelementptr inbounds "+retval_text+"* @"+retval+", i64 0"*(retval_dim+1)+"\n")
             break
 
-# Used to remove specific parameters from the main function
 def removeArgs(l,r):
+    """ Used to remove specific parameters from the main function """
     args=l[l.find("(")+1:l.rfind(")")]
     args=[x.strip() for x in args.split(',')]
     new_l=l[:l.find("(")+1]
@@ -260,6 +261,8 @@ def removeArgs(l,r):
 
 
 def restructureMainFunction(l):
+    """ Changes the function signature by removing unnecessary parameters """
+
     # Force first function to be the main function
     l=l[0:l.find("@")+1]+"main"+l[l.find("("):]
 
@@ -278,9 +281,9 @@ def restructureMainFunction(l):
 
     return l
 
-# This will transform stores to the return value to volatiles
-# This guarantees that the output memory is not optimized away
 def processReturnStores(return_value):
+    """ This will transform stores to the return value to volatiles
+    This guarantees that the output memory is not optimized away"""
     prev_instr=""
     for idx,curr_instr in enumerate(ir):
         if ((safeCheckArg(return_value,prev_instr) and ("getelementptr" in prev_instr)) or (safeCheckArg(return_value,curr_instr))) and "store" in curr_instr:
@@ -293,8 +296,8 @@ def processReturnStores(return_value):
     data = { "return_value": return_value }
     json.dump(data, file)
 
-# Make all loads to arguments volatile, so inputs are not optimized away
 def processArgLoads():
+    """ Make all loads to arguments volatile, so inputs are not optimized away """
     prev_instr=""
     for idx,curr_instr in enumerate(ir):
         # getelementptr with arguments are always followed by loads
@@ -303,54 +306,60 @@ def processArgLoads():
         prev_instr=curr_instr[:]
 
 def getFolder(file):
+    """ Gets folder of a specific file """
     if "/" in file:
         return file[:file.rfind("/")+1]
     else:
         return ""
-# Receive input and output files
-input_file=sys.argv[1]
-output_file=sys.argv[2]
-output_folder=getFolder(output_file)
 
-# Open input and output files 
-f_in = open(input_file,'r')
-f_out = open(output_file,'w')
+def readIR(input_file):
+    """ Reads the IR file and saves it into a variable """
+    with open(input_file,'r') as f_in:
+        ir=[]
+        while True:
+            # Read line by line and exit when done
+            line = f_in.readline()
+            if not line:
+                break
+            ir.append(line)
+        return ir
 
-# We will cache all file in an list to make it simpler to move information around
-ir=[]
-while True:
-    # Read line by line and exit when done
-    line = f_in.readline()
-    if not line:
-        break
-    ir.append(line)
+def writeIR(ir, output_file):
+    """ Used to write the IR back to a file after everything has been processed """
+    with open(output_file,'w') as f_out:
+        for line in ir:
+            f_out.write(line)
 
-# Make sure that first function is main function and restructure it properly
-idx = [i for i, s in enumerate(ir) if 'define' in s]
-ir[idx[0]] = restructureMainFunction(ir[idx[0]])
+if __name__ == '__main__':
+    # Receive input and output files
+    input_file=sys.argv[1]
+    output_file=sys.argv[2]
+    output_folder=getFolder(output_file)
 
-# Insert blank line between globals and main
-ir.insert(4,"\n")
+    # We will cache all file in an list to make it simpler to move information around
+    ir=readIR(input_file)
 
-# Promote all arguments associated with %params to a global variable
-promoteParamsToGlobal()
+    # Make sure that first function is main function and restructure it properly
+    idx = [i for i, s in enumerate(ir) if 'define' in s]
+    ir[idx[0]] = restructureMainFunction(ir[idx[0]])
 
-# Promote array to temporary buffers to a global variable
-num_temps = promoteTempsToGlobal()
+    # Insert blank line between globals and main
+    ir.insert(4,"\n")
 
-processReturnStores("temp"+str(num_temps-1))
+    # Promote all arguments associated with %params to a global variable
+    promoteParamsToGlobal()
 
-# Make all loads to arguments volatile, so inputs are not optimized away
-processArgLoads()
+    # Promote array to temporary buffers to a global variable
+    num_temps = promoteTempsToGlobal()
 
-# Remove Tensorflow's retval and return correct output
-processRetval("temp"+str(num_temps-1))
+    # Makes sure that we are returning volatile stores, so they are not optimized away
+    processReturnStores("temp"+str(num_temps-1))
 
-# Write IR data back to file
-for line in ir:
-    # Process line
-    f_out.write(line)
+    # Make all loads to arguments volatile, so inputs are not optimized away
+    processArgLoads()
 
-# Close both files
-f_in.close()
-f_out.close()
+    # Remove Tensorflow's retval and return correct output
+    processRetval("temp"+str(num_temps-1))
+
+    # Writting back the IR into the verilog file
+    writeIR(ir,output_file)

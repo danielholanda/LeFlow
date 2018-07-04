@@ -28,6 +28,7 @@ import numpy as np
 import struct, inspect, os, sys
 
 def setUnrollThreshold(threshold):
+    """ This allows the user to set the unroll threshold at the python level """
 
     # Gets name of circuit that is being generated
     project_folder = inspect.getmodule(inspect.stack()[1][0]).__file__.replace(".py","")+"_files/"
@@ -40,6 +41,8 @@ def setUnrollThreshold(threshold):
     f.close()
 
 def getUnrollThreshold(project_folder):
+    """ This is used internally to get the unroll threshold set by the user """
+
     if not os.path.isfile(project_folder+"leflowOptions/unrollThreshold.txt"):
         return "0"
     else:
@@ -50,6 +53,7 @@ def getUnrollThreshold(project_folder):
         return threshold
 
 def setInlineThreshold(threshold):
+    """ This allows the user to set the inline threshold at the python level """
 
     # Gets name of circuit that is being generated
     project_folder = inspect.getmodule(inspect.stack()[1][0]).__file__.replace(".py","")+"_files/"
@@ -62,6 +66,8 @@ def setInlineThreshold(threshold):
     f.close()
 
 def getInlineThreshold(project_folder):
+    """ This is used internally to get the inline threshold set by the user """
+
     if not os.path.isfile(project_folder+"leflowOptions/inlineThreshold.txt"):
         return "0"
     else:
@@ -72,7 +78,12 @@ def getInlineThreshold(project_folder):
         return threshold
 
 def setPartitionMemory(partition_settings):
-
+    """ Used to set an array to be partitioned 
+    First argument:     Array to be partitioned in terms of the IR
+    Second argument:    Dimension to be partitioned
+    Third argument:     Partitioning scheme (b: clock, c: cyclic, f: full)
+    Fourth argument:    Number of blocks to partition the memory
+    """
     # Gets name of circuit that is being generated
     project_folder = inspect.getmodule(inspect.stack()[1][0]).__file__.replace(".py","")+"_files/"
     if not os.path.exists(project_folder+"leflowOptions/"):

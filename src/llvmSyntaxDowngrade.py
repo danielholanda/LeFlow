@@ -22,11 +22,27 @@
 #WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #---------------------------------------------------------------------------
 
-
 import sys
 
-# Metadata syntax changed between LLVM versions
+def synthaxDowngrade(input_file, output_file): 
+    """ Downgrades the synthax of the LLVM IR line by line """
+    # Open input and output files
+    with open(input_file,'r') as f_in:
+        with open(output_file,'w') as f_out:
+
+            # Write to output file according to old syntax
+            while True:
+                # Read line by line and exit when done
+                line = f_in.readline()
+                if not line:
+                    break
+
+                # Process line
+                processLine(line, f_out)
+                
 def processMetadata(l):
+    """ Metadata syntax changed between LLVM versions.
+    This pass removes unsupported metadata and updates the synthax"""
     aux=l[l.find("{")+1:l.find("}/n")-1]
     aux=aux.replace("!","metadata !")
     aux=aux.replace("speculatable","")
@@ -35,10 +51,12 @@ def processMetadata(l):
         aux='metadata !""'
     l=l[0:l.find("{")-1]+"metadata !{"+aux+"}\n"
     l=l.replace("distinct ","")
-    f_out.write(l)
+    return l
 
-# Update synthax of a single operation
-def processLine(l):
+
+def processLine(l,f_out):
+    """ This updates a single instruction of the LLVM IR according to the operation that is being performed """
+
     #  source_filename is not required in older LLVM versions
     if "source_filename" in l:
         return
@@ -56,7 +74,7 @@ def processLine(l):
 
     #Dealing with metadata
     elif l[0]=="!" and l[1].isdigit(): 
-        processMetadata(l)
+        f_out.write(processMetadata(l))
 
     # Only introduced in later LLVM versions
     elif "local_unnamed_addr" in l:
@@ -81,24 +99,9 @@ def processLine(l):
     else:
         f_out.write(l)
 
-# Receive input and output files
-input_file=sys.argv[1]
-output_file=sys.argv[2]
+if __name__ == '__main__':
+    # Receive input and output files
+    input_file=sys.argv[1]
+    output_file=sys.argv[2]
 
-# Open input and output files 
-f_in = open(input_file,'r')
-f_out = open(output_file,'w')
-
-# Write to output file according to old syntax
-while True:
-    # Read line by line and exit when done
-    line = f_in.readline()
-    if not line:
-        break
-
-    # Process line
-    processLine(line)
-
-# Close both files
-f_in.close()
-f_out.close()
+    synthaxDowngrade(input_file,output_file)

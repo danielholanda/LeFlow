@@ -22,41 +22,43 @@
 #WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #---------------------------------------------------------------------------
 
-
 import sys
 
-
-# For some reason, LegUp does not support fcmp uno
 def processUnsupported():
+    """ Handles some operations that are not supported by LegUp """
+
+    # For some reason, LegUp does not support fcmp uno
     for idx,curr_instr in enumerate(ir):
         if " uno float" in curr_instr and "0.000000e+00" in curr_instr:
             ir[idx]=ir[idx].replace(" uno "," ueq ")
 
+def readIR(input_file):
+    """ Reads the IR file and saves it into a variable """
+    with open(input_file,'r') as f_in:
+        ir=[]
+        while True:
+            # Read line by line and exit when done
+            line = f_in.readline()
+            if not line:
+                break
+            ir.append(line)
+        return ir
 
-# Receive input and output files
-input_file=sys.argv[1]
-output_file=sys.argv[2]
+def writeIR(ir, output_file):
+    """ Used to write the IR back to a file after everything has been processed """
+    with open(output_file,'w') as f_out:
+        for line in ir:
+            f_out.write(line)
 
-# Open input and output files 
-f_in = open(input_file,'r')
-f_out = open(output_file,'w')
+if __name__ == '__main__':
+    # Receive input and output files
+    input_file=sys.argv[1]
+    output_file=sys.argv[2]
 
-# We will cache all file in an list to make it simpler to move information around
-ir=[]
-while True:
-    # Read line by line and exit when done
-    line = f_in.readline()
-    if not line:
-        break
-    ir.append(line)
+    # We will cache all file in an list to make it simpler to move information aroun
+    ir=readIR(input_file)
 
-processUnsupported()
+    processUnsupported()
 
-# Write IR data back to file
-for line in ir:
-    # Process line
-    f_out.write(line)
-
-# Close both files
-f_in.close()
-f_out.close()
+    # Writting back the IR into the verilog file
+    writeIR(ir,output_file)
