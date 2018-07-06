@@ -24,13 +24,25 @@ import subprocess, os, time, sys
 sys.path.append('../src')
 import processMif as mif
 import numpy as np
+import argparse
+
+# Configurations for argparse
+parser = argparse.ArgumentParser(description='LeFlow Test Set')
+parser.add_argument('--fast', action='store_true',
+                    help='If specified, overall performance/functionality will be evaluated using fast tests only')
+args = parser.parse_args()
 
 # Used for supressing silly messages
 FNULL = open(os.devnull, 'w')
 
 start_time = time.time()
 
-test_folders = ['01_vecmul_a','02_vecmul_b','03_vecmul_b_f','04_dense_a','05_dense_b','06_softmax_a','07_softmax_b','08_softmax_b_f','09_conv2d_a','10_conv2d_a_f','11_conv2d_b','12_maxp_a','13_maxp_b','14_maxp_b_f','15_thxprlsg']
+# Selects which tests will run
+if args.fast:
+    test_folders = ['03_vecmul_b_f','04_dense_a','06_softmax_a','09_conv2d_a','12_maxp_a']
+    
+else:
+    test_folders = ['01_vecmul_a','02_vecmul_b','03_vecmul_b_f','04_dense_a','05_dense_b','06_softmax_a','07_softmax_b','08_softmax_b_f','09_conv2d_a','10_conv2d_a_f','11_conv2d_b','12_maxp_a','13_maxp_b','14_maxp_b_f','15_thxprlsg']
 
 test_dir = os.getcwd() 
 

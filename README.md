@@ -38,8 +38,11 @@ LeFlow comes to 15 building blocks that are contained inside of the tests folder
 
 - To test your installation, go into the test directory and run
     ``` 
-    python test_all.py
+    python test_all.py --fast
     ``` 
+
+All the tests should take less than a minute. For a more complete test, just run the same python script without the "--fast" option.
+
 If one of the tests fail you have a problem with your installation. Please also make sure that the code works with Tesorflow before trying to generate a circuit using LeFlow.
 
 ## Getting Started
