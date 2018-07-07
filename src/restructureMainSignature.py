@@ -21,103 +21,17 @@
 # IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #---------------------------------------------------------------------------
 
-import sys, json
-
-def instrReorder(instr):
-    """ Reorder other instructions based on a instruction that was removed """
-
-    # Find current and max instruction
-    curr_instr=instr.split()[0][1:instr.find("=")-1]
-    for i in reversed(ir):
-        if i.split():
-            if i.split()[0][0]=="%":
-                if i.split()[0][1:i.find("=")-1].isdigit():
-                    max_instr=i.split()[0][1:i.find("=")-1]
-                    break
-
-    # Reorder instructions
-    for i in range(int(curr_instr)+1,int(max_instr)+1):
-        for idx,j in enumerate(ir):
-            if "%"+str(i) in ir[idx]:
-                safeReplace("%"+str(i),"%"+str(i-1),idx)
-
-def safeReplace(old, new, idx):
-    """ Safely replace a string in a line of IR """
-    ir[idx]=ir[idx].replace(old+" ",new+" ")
-    ir[idx]=ir[idx].replace(old+",",new+",")
-    ir[idx]=ir[idx].replace(old+"\n",new+"\n")
-    ir[idx]=ir[idx].replace(old+")",new+")")
-
-def safeCheckArg(arg, instr):
-    """ Checks if arg is in intruction """
-    if (arg+" " in instr) or (arg+"," in instr) or (arg+"\n" in instr) or (arg+")" in instr):
-        return True
-    else:
-        return False
-
-def safelyDelete(parameter,key_operation,is_global=False):
-    """ Deletes instruction and passes references to the rest of the IR """ 
-    keep_looking=True
-    while keep_looking:
-        keep_looking=False
-
-        # Check if there is a case where the parameter is used that matches the key operation
-        for instr in ir:
-            if (parameter in instr) and (key_operation in instr) and ("metadata" not in instr):
-                instruction_to_process=instr
-                keep_looking=True
-                break
-
-        # If there is,  
-        if keep_looking:
-            # Remove that instruction
-            ir.remove(instruction_to_process)
-
-            # reconstruct calls 
-            for idx,instr in enumerate(ir):
-                if instruction_to_process.split()[0] in instr:
-                    if is_global:
-                        safeReplace(instruction_to_process.split()[0],"@"+parameter,idx)
-                    else:
-                        safeReplace(instruction_to_process.split()[0],"%"+parameter,idx)
-                    
-
-            # and reorder getelementptr
-            if instruction_to_process.split()[0][1:].isdigit():
-                instrReorder(instruction_to_process)
-
-def safelyDeleteNamed(parameter,key_operation):
-    """ Deletes instruction and passes references to the rest of the IR """
-    keep_looking=True
-    while keep_looking:
-        keep_looking=False
-
-        # Check if there is a case where the parameter is used that matches the key operation and is named (not a normal operation)
-        for instr in ir:
-            if (parameter in instr) and (key_operation in instr) and ("metadata" not in instr) and not instr.split()[0][1:].isdigit():
-                instruction_to_process=instr
-                keep_looking=True
-                break
-
-        # If there is,  
-        if keep_looking:
-            # Remove that instruction
-            ir.remove(instruction_to_process)
-
-            # reconstruct calls 
-            for idx,instr in enumerate(ir):
-                if instruction_to_process.split()[0] in instr:
-                    safeReplace(instruction_to_process.split()[0],"@"+parameter,idx)
+import sys, json, misc 
 
 def promoteToGlobal(var_name):
     """ Transforms inputs and temporary variables to global variables """
 
     # The sequence is gep (optional), load to temps, gep (optional), bitcast to real type
     # We use the following operations to get "temps" in the bitcast to real var
-    safelyDelete(var_name,"getelementptr")
-    safelyDelete(var_name,"bitcast")
-    safelyDelete(var_name,"load")
-    safelyDelete(var_name,"getelementptr")
+    misc.safelyDelete(ir,var_name,"getelementptr")
+    misc.safelyDelete(ir,var_name,"bitcast")
+    misc.safelyDelete(ir,var_name,"load")
+    misc.safelyDelete(ir,var_name,"getelementptr")
 
     if var_name=="temps":
     	var_name_initializer="@temp"
@@ -145,14 +59,14 @@ def promoteToGlobal(var_name):
         # Make sure to update all references to this temporary variable
         if keep_looking:
             for idx,x in enumerate(ir):
-                if safeCheckArg(arg,x):
-                    safeReplace(arg,var_name_initializer+str(var_counter),idx)
+                if misc.safeCheckArg(arg,x):
+                    misc.safeReplace(ir,arg,var_name_initializer+str(var_counter),idx)
 
             var_counter=var_counter+1
         
             # Finally, reorder the instructions
             if arg[1:].isdigit():
-                instrReorder(instr)
+                misc.instrReorder(ir,instr)
 
     return var_counter
 
@@ -165,7 +79,7 @@ def processRetval(retval):
 
     # First, remove Tensorflow's Retval
     # The sequence is either store OR bitcast, store
-    safelyDelete("retval","bitcast")
+    misc.safelyDelete(ir,"retval","bitcast")
     for idx,instr in enumerate(ir):
         if "retval" in instr:
             ir.pop(idx)
@@ -185,12 +99,7 @@ def processRetval(retval):
             break
 
     # Get the dataype and dimension
-    if "i64" in retval_text:
-        retval_dataType="i64"
-    elif "i32" in retval_text:
-        retval_dataType="i32"
-    elif "float" in retval_text:
-        retval_dataType="float"
+    retval_dataType=misc.getDataType(instr)
     retval_dim=retval_text.count("[")
     if returning_single_native:
         retval_text=retval_dataType
@@ -251,7 +160,7 @@ def processReturnStores(return_value):
     This guarantees that the output memory is not optimized away"""
     prev_instr=""
     for idx,curr_instr in enumerate(ir):
-        if ((safeCheckArg(return_value,prev_instr) and ("getelementptr" in prev_instr)) or (safeCheckArg(return_value,curr_instr))) and "store" in curr_instr:
+        if ((misc.safeCheckArg(return_value,prev_instr) and ("getelementptr" in prev_instr)) or (misc.safeCheckArg(return_value,curr_instr))) and "store" in curr_instr:
         #if return_value in prev_instr and "getelementptr" in prev_instr and "store" in curr_instr:
             ir[idx]=ir[idx].replace("store","store volatile")
         prev_instr=curr_instr[:]
@@ -270,39 +179,14 @@ def processArgLoads():
             ir[idx]=ir[idx].replace("load","load volatile")
         prev_instr=curr_instr[:]
 
-def getFolder(file):
-    """ Gets folder of a specific file """
-    if "/" in file:
-        return file[:file.rfind("/")+1]
-    else:
-        return ""
-
-def readIR(input_file):
-    """ Reads the IR file and saves it into a variable """
-    with open(input_file,'r') as f_in:
-        ir=[]
-        while True:
-            # Read line by line and exit when done
-            line = f_in.readline()
-            if not line:
-                break
-            ir.append(line)
-        return ir
-
-def writeIR(ir, output_file):
-    """ Used to write the IR back to a file after everything has been processed """
-    with open(output_file,'w') as f_out:
-        for line in ir:
-            f_out.write(line)
-
 if __name__ == '__main__':
     # Receive input and output files
     input_file=sys.argv[1]
     output_file=sys.argv[2]
-    output_folder=getFolder(output_file)
+    output_folder=misc.getFolder(output_file)
 
     # We will cache all file in an list to make it simpler to move information around
-    ir=readIR(input_file)
+    ir=misc.readIR(input_file)
 
     # Make sure that first function is main function and restructure it properly
     idx = [i for i, s in enumerate(ir) if 'define' in s]
@@ -327,4 +211,4 @@ if __name__ == '__main__':
     processRetval("temp"+str(num_temps-1))
 
     # Writting back the IR into the verilog file
-    writeIR(ir,output_file)
+    misc.writeIR(ir,output_file)

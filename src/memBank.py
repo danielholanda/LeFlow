@@ -22,42 +22,15 @@
 #---------------------------------------------------------------------------
 
 
-import sys, re, os, inspect, shutil
+import sys, re, os, inspect, shutil, misc
 
 def getArrayInfo(partition_name):
     """ Returns the array dimensions and the datatype """
     for instr in ir:
         if "@"+partition_name+" =" in instr:
             dim =  instr[instr.find("["):instr.find("zeroinitializer")].replace('[','').replace(']','').replace('i64','').replace('float','').replace('i32','').replace('x','').split()
-            if "i64" in instr:
-                dataType="i64"
-            elif "i32" in instr:
-                dataType="i32"
-            elif "float" in instr:
-                dataType="float"
-            else:
-                print("Could not find data type")
-                exit()
+            dataType=misc.getDataType(instr)
             return [ int(x) for x in dim ], dataType
-
-
-def readIR(input_file):
-    """ Reads the IR file and saves it into a variable """
-    with open(input_file,'r') as f_in:
-        ir=[]
-        while True:
-            # Read line by line and exit when done
-            line = f_in.readline()
-            if not line:
-                break
-            ir.append(line)
-        return ir
-
-def writeIR(ir, output_file):
-    """ Used to write the IR back to a file after everything has been processed """
-    with open(output_file,'w') as f_out:
-        for line in ir:
-            f_out.write(line)
 
 def getConfig(ir, memconfig_file_path):
     """ Gets the arrays to be partitioned from the memconfig file """
@@ -182,7 +155,7 @@ if __name__ == '__main__':
     memconfig_file_path=sys.argv[3]
 
     # We will cache all file in an list to make it simpler to move information around
-    ir=readIR(input_file)
+    ir=misc.readIR(input_file)
 
     # Get partition config
     partitions = getConfig(ir, memconfig_file_path)
@@ -191,4 +164,4 @@ if __name__ == '__main__':
     partitionMemories(ir)
 
     # Write output file
-    writeIR(ir, output_file)
+    misc.writeIR(ir, output_file)
