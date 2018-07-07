@@ -109,70 +109,36 @@ def safelyDeleteNamed(parameter,key_operation):
                 if instruction_to_process.split()[0] in instr:
                     safeReplace(instruction_to_process.split()[0],"@"+parameter,idx)
 
-def promoteParamsToGlobal():
-    """ Transforms inputs to global variables """
-
-    # Very similar to promoteTempsToGlobal
-    safelyDelete("params","getelementptr")
-    safelyDelete("params","bitcast")
-    safelyDelete("params","load")
-    safelyDelete("params","getelementptr")
-
-    # Transform bitcast to params into global variables
-    keep_looking=True
-    temps_counter=0
-    while keep_looking:
-        keep_looking=False
-        for instr in ir[:]:
-            # Try to find a load to temps
-            if ("%params" in instr) and ("bitcast" in instr) and ("metadata" not in instr):
-                arg=instr.split()[0]
-                arg_type=instr[instr.find(" to ")+4:-2]
-                keep_looking=True
-
-                # If found, we then insert them as a global variable and remove it from its previous location
-                ir.insert(4,"@param"+str(temps_counter)+" = global "+arg_type+" zeroinitializer, align 8\n")
-                ir.remove(instr)
-                break
-        
-        # Make sure to update all references to this temporary variable
-        if keep_looking:
-            for idx,x in enumerate(ir):
-                if safeCheckArg(arg,x):
-                    safeReplace(arg,"@param"+str(temps_counter),idx)
-
-            temps_counter=temps_counter+1
-        
-            # Finally, reorder the instructions
-            if arg[1:].isdigit():
-                instrReorder(instr)
-
-    return temps_counter
-
-def promoteTempsToGlobal():
-    """ Transforms temporary variables to global variables """
+def promoteToGlobal(var_name):
+    """ Transforms inputs and temporary variables to global variables """
 
     # The sequence is gep (optional), load to temps, gep (optional), bitcast to real type
     # We use the following operations to get "temps" in the bitcast to real var
-    safelyDelete("temps","getelementptr")
-    safelyDelete("temps","bitcast")
-    safelyDelete("temps","load")
-    safelyDelete("temps","getelementptr")
+    safelyDelete(var_name,"getelementptr")
+    safelyDelete(var_name,"bitcast")
+    safelyDelete(var_name,"load")
+    safelyDelete(var_name,"getelementptr")
+
+    if var_name=="temps":
+    	var_name_initializer="@temp"
+    elif var_name=="params":
+    	var_name_initializer="@param"
+
     
     # Transform bitcast to temps into global variables
     keep_looking=True
-    temps_counter=0
+    var_counter=0
     while keep_looking:
         keep_looking=False
         for instr in ir[:]:
             # Try to find a load to temps
-            if ("%temps" in instr) and ("bitcast" in instr) and ("metadata" not in instr):
+            if ("%"+var_name in instr) and ("bitcast" in instr) and ("metadata" not in instr):
                 arg=instr.split()[0]
                 arg_type=instr[instr.find(" to ")+4:-2]
                 keep_looking=True
 
                 # If found, we then insert them as a global variable and remove it from its previous location
-                ir.insert(4,"@temp"+str(temps_counter)+" = global "+arg_type+" zeroinitializer, align 8\n")
+                ir.insert(4,var_name_initializer+str(var_counter)+" = global "+arg_type+" zeroinitializer, align 8\n")
                 ir.remove(instr)
                 break
         
@@ -180,15 +146,15 @@ def promoteTempsToGlobal():
         if keep_looking:
             for idx,x in enumerate(ir):
                 if safeCheckArg(arg,x):
-                    safeReplace(arg,"@temp"+str(temps_counter),idx)
+                    safeReplace(arg,var_name_initializer+str(var_counter),idx)
 
-            temps_counter=temps_counter+1
+            var_counter=var_counter+1
         
             # Finally, reorder the instructions
             if arg[1:].isdigit():
                 instrReorder(instr)
 
-    return temps_counter
+    return var_counter
 
 def processRetval(retval):
     """ Even though we are able to simulate the circuit with modelsim perfectly, the
@@ -205,7 +171,7 @@ def processRetval(retval):
             ir.pop(idx)
             break
 
-	returning_single_native=False
+    returning_single_native=False
     # Then, get the text of the return value
     for idx,instr in enumerate(ir):
         if "@"+retval in instr:
@@ -346,10 +312,10 @@ if __name__ == '__main__':
     ir.insert(4,"\n")
 
     # Promote all arguments associated with %params to a global variable
-    promoteParamsToGlobal()
+    promoteToGlobal("params")
 
     # Promote array to temporary buffers to a global variable
-    num_temps = promoteTempsToGlobal()
+    num_temps = promoteToGlobal("temps")
 
     # Makes sure that we are returning volatile stores, so they are not optimized away
     processReturnStores("temp"+str(num_temps-1))
