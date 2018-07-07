@@ -28,7 +28,7 @@ def getArrayInfo(partition_name):
     """ Returns the array dimensions and the datatype """
     for instr in ir:
         if "@"+partition_name+" =" in instr:
-            dim =  instr[instr.find("["):instr.find("zeroinitializer")].replace('[','').replace(']','').replace('i64','').replace('float','').replace('i32','').replace('x','').split()
+            dim =  re.findall('\[(.*?\d+)', instr)
             dataType=misc.getDataType(instr)
             return [ int(x) for x in dim ], dataType
 
@@ -77,7 +77,6 @@ def updateGEP(partition_name,partition_values,partition_dim,dataType,partitioned
         if "@"+partition_name+"," in instr and "getelementptr"in instr:
 
             # Get the current which indexes of this array are being used in this instruction
-            #current_indexes=re.findall('\i64 (.*?)\,', instr)[1:] #  THIS ONE WORKS WITH DEBUG INFO AFTER IT
             current_indexes=re.findall('\i64 (.*?)[,\s]', instr)[1:]
             
             # Now lets try to find out the subarray that this index belongs to
@@ -109,7 +108,7 @@ def updateGEP(partition_name,partition_values,partition_dim,dataType,partitioned
                     new_indexes=new_indexes+", i64 "+str(current_partition.index(int(current_indexes[i]))) 
                 else:
                     new_indexes=new_indexes+", i64 "+current_indexes[i].replace(',','')
-            ir[idx]=re.findall('(.*@\S*,)',ir[idx])[0] + new_indexes +"\n"#+ re.findall('.*i64 \d+(.*)',ir[idx])[0] +"\n"#+ ir[idx][:ir[idx].rfind(dataType)]
+            ir[idx]=re.findall('(.*@\S*,)',ir[idx])[0] + new_indexes +"\n"
 
 def partitionMemories(ir):
     """ Loop though all partitions (we might want to partition multiple memories of the same program) """

@@ -36,7 +36,7 @@ legup_examples_folder="/home/legup/legup-4.0/examples/"
 ######### Compilation Flow #########
 ####################################
 def run_leflow(tf_file,tool_path):
-	""" Generates hardware using LeFLow """
+    """ Generates hardware using LeFLow """
 
     # Creates project name based on input file
     project_name=tf_file[:-3]
@@ -135,7 +135,7 @@ def run_leflow(tf_file,tool_path):
 ############# Test Flow ############
 ####################################
 def run_modelsim():
-	""" Runs modelsim to test results """
+    """ Runs modelsim to test results """
     print("INFO: Starting Modelsim...")
 
     command = "make v -C {}".format(project_folder)
@@ -164,7 +164,7 @@ def run_modelsim():
 ############# Arg Parser ###########
 ####################################
 def getArgsAndPath():
-	""" Returns arguments passed by the user and current tool path """
+    """ Returns arguments passed by the user and current tool path """
     tool_path, _ = os.path.split(os.path.abspath(__file__))
 
     parser = argparse.ArgumentParser(description='LeFlow')
