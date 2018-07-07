@@ -26,65 +26,43 @@ import subprocess, os, shutil, sys
 import additionalOptions as options
 import argparse
 
-dirname, _ = os.path.split(os.path.abspath(__file__))
-TOOL_PATH = dirname
-
-parser = argparse.ArgumentParser(description='LeFlow')
-
-parser.add_argument('file_name', type=str,
-                    help='Tensorflow file to generate hardware from.')
-parser.add_argument('--modelsim', action='store_true',
-                    help='If specified, modelsim will run to test generated hardware.')
-parser.add_argument('--modelsim_only', action = 'store_true',
-            help='If specified, only modelsim will run. LeFlow will not compile')
-args = parser.parse_args()
-
-
 ####################################
 ########## Configurations ##########
 ####################################
 python_path="/usr/bin/python"
 legup_examples_folder="/home/legup/legup-4.0/examples/"
 
-if not os.path.exists(legup_examples_folder):
-    print("ERROR: Legup examples folder is not properly set. To edit, open the tool by typing <vi LeFlow> from src directory and editing the variable 'legup_examples_folder', and please include a '/' after the name of the directory")
-    print("INFO: Exiting LeFlow.")
-    exit()
-####################################
-###### Internal Configurations #####
-####################################
-
-# Creates project name based on input file
-project_name=args.file_name[:-3]
-project_folder=project_name+"_files/"
-
-# Sets up XLA flags
-XLA_flags="--xla_dump_ir_to="+project_folder+"ir "
-XLA_flags+="--xla_llvm_enable_invariant_load_metadata=false --xla_llvm_enable_noalias_metadata=false --xla_llvm_enable_alias_scope_metadata=false --xla_enable_fast_math=false --xla_backend_optimization_level=0"
-
-# Used for supressing silly messages
-FNULL = open(os.devnull, 'w')
-
-
 ####################################
 ######### Compilation Flow #########
 ####################################
-def run_leflow(tf_file):
+def run_leflow(tf_file,tool_path):
+	""" Generates hardware using LeFLow """
+
+    # Creates project name based on input file
+    project_name=tf_file[:-3]
+    project_folder=project_name+"_files/"
+
+    # Sets up XLA flags
+    XLA_flags="--xla_dump_ir_to="+project_folder+"ir "
+    XLA_flags+="--xla_llvm_enable_invariant_load_metadata=false --xla_llvm_enable_noalias_metadata=false --xla_llvm_enable_alias_scope_metadata=false --xla_enable_fast_math=false --xla_backend_optimization_level=0"
+
+    # Used for supressing silly messages
+    FNULL = open(os.devnull, 'w')
 
     # Create folder and generate Makefile
     print("INFO: Creating project...") 
     if os.path.exists(project_folder):
         shutil.rmtree(project_folder, ignore_errors=True)
     os.makedirs(project_folder)
-    shutil.copy(TOOL_PATH+"/LeFlow_Makefile",project_folder+"Makefile")
-    shutil.copy(TOOL_PATH+"/LeFlow_config.tcl",project_folder+"config.tcl")
+    shutil.copy(tool_path+"/LeFlow_Makefile",project_folder+"Makefile")
+    shutil.copy(tool_path+"/LeFlow_config.tcl",project_folder+"config.tcl")
     subprocess.Popen(["sed","-i","1 i\NAME="+project_name, project_folder+"Makefile"]).wait()
     subprocess.Popen(["sed","-i","1 i\LEVEL="+legup_examples_folder, project_folder+"Makefile"]).wait() 
     subprocess.Popen(["sed","-i","1 i\source "+legup_examples_folder+"legup.tcl", project_folder+"config.tcl"]).wait() 
 
     # Adding floating point IP to project
-    for ip in os.listdir(TOOL_PATH+"/ip/"):
-        shutil.copy(TOOL_PATH+"/ip/"+ip,project_folder)
+    for ip in os.listdir(tool_path+"/ip/"):
+        shutil.copy(tool_path+"/ip/"+ip,project_folder)
 
     # Clean folder to erase previously generated files
     print("INFO: Cleaning previous files...")
@@ -99,11 +77,11 @@ def run_leflow(tf_file):
     # Remove unused files and name things properly
     print("INFO: Cleaning unused dumped files...")
     shutil.copy(project_folder+"ir/ir-cluster_0__XlaCompiledKernel_true__XlaNumConstantArgs_0__XlaNumResourceArgs_0__module-with-opt.ll",project_folder+project_name+"_ir_1.ll")
-    #shutil.rmtree(project_folder+"ir/", ignore_errors=True)
+    shutil.rmtree(project_folder+"ir/", ignore_errors=True)
 
     # Convert to old LLVM syntax (Tensorflow and LegUp use different versions of LLVM)
     print("INFO: Converting between LLVM versions...")
-    subprocess.Popen([python_path,TOOL_PATH+"/llvmSyntaxDowngrade.py",project_folder+project_name+"_ir_1.ll",project_folder+project_name+"_ir_2.ll"]).wait()
+    subprocess.Popen([python_path,tool_path+"/llvmSyntaxDowngrade.py",project_folder+project_name+"_ir_1.ll",project_folder+project_name+"_ir_2.ll"]).wait()
 
     print("INFO: Running first batch of optimizations before unrolling...")
     subprocess.Popen(["llvm-as",project_folder+project_name+"_ir_2.ll"]).wait()
@@ -120,15 +98,15 @@ def run_leflow(tf_file):
 
     # Restructure function signature, change variables scope and reorganizes code
     print("INFO: Restructuring the IR signature...")
-    subprocess.Popen([python_path,TOOL_PATH+"/restructureMainSignature.py",project_folder+project_name+"_ir_4.ll",project_folder+project_name+"_ir_5.ll"]).wait()
+    subprocess.Popen([python_path,tool_path+"/restructureMainSignature.py",project_folder+project_name+"_ir_4.ll",project_folder+project_name+"_ir_5.ll"]).wait()
 
     # Reqrites unsupported operations 
     print("INFO: Rewriting unsupported operations...")
-    subprocess.Popen([python_path,TOOL_PATH+"/restructureOperations.py",project_folder+project_name+"_ir_5.ll",project_folder+project_name+"_ir_6.ll"]).wait()
+    subprocess.Popen([python_path,tool_path+"/restructureOperations.py",project_folder+project_name+"_ir_5.ll",project_folder+project_name+"_ir_6.ll"]).wait()
 
     # Partitioning the memories
     print("INFO: Partitioning arrays...")
-    subprocess.Popen([python_path,TOOL_PATH+"/memBank.py",project_folder+project_name+"_ir_6.ll",project_folder+project_name+"_ir_7.ll",project_folder+"leflowOptions/membank.config"]).wait()
+    subprocess.Popen([python_path,tool_path+"/memBank.py",project_folder+project_name+"_ir_6.ll",project_folder+project_name+"_ir_7.ll",project_folder+"leflowOptions/membank.config"]).wait()
 
     # Convert human-readable .ll file to bitcode (.bc file)
     print("INFO: Converting human-readable .ll file to bitcode...")
@@ -147,7 +125,7 @@ def run_leflow(tf_file):
 
     # Instrumenting verilog testbench
     print("INFO: Instrumenting testbench and mapping args and temps")
-    subprocess.Popen([python_path,TOOL_PATH+"/postSynthesis.py",project_folder+project_name+".v"]).wait()
+    subprocess.Popen([python_path,tool_path+"/postSynthesis.py",project_folder+project_name+".v"]).wait()
 
 
     print("INFO: DONE!")
@@ -157,6 +135,7 @@ def run_leflow(tf_file):
 ############# Test Flow ############
 ####################################
 def run_modelsim():
+	""" Runs modelsim to test results """
     print("INFO: Starting Modelsim...")
 
     command = "make v -C {}".format(project_folder)
@@ -181,12 +160,40 @@ def run_modelsim():
         
     return True
 
-###############################################################################
-# PROGRAM START
-###############################################################################
-if not args.modelsim_only:
-    run_leflow(args.file_name)
-if args.modelsim:
-    run_modelsim()
-if args.modelsim_only:
-    run_modelsim()
+####################################
+############# Arg Parser ###########
+####################################
+def getArgsAndPath():
+	""" Returns arguments passed by the user and current tool path """
+    tool_path, _ = os.path.split(os.path.abspath(__file__))
+
+    parser = argparse.ArgumentParser(description='LeFlow')
+
+    parser.add_argument('file_name', type=str,
+                        help='Tensorflow file to generate hardware from.')
+    parser.add_argument('--modelsim', action='store_true',
+                        help='If specified, modelsim will run to test generated hardware.')
+    parser.add_argument('--modelsim_only', action = 'store_true',
+                help='If specified, only modelsim will run. LeFlow will not compile')
+    return [parser.parse_args(),tool_path]
+
+####################################
+########### Main Routine ###########
+####################################
+if __name__ == '__main__':
+    # Checks if path to LegUp is correctly configured
+    if not os.path.exists(legup_examples_folder):
+        print("ERROR: Legup examples folder is not properly set. To edit, open the tool by typing <vi LeFlow> from src directory and editing the variable 'legup_examples_folder', and please include a '/' after the name of the directory")
+        print("INFO: Exiting LeFlow.")
+        exit()
+    
+    # Get user arguments
+    args,tool_path = getArgsAndPath() 
+
+    # Runs LeFlow according to user options
+    if not args.modelsim_only:
+        run_leflow(args.file_name,tool_path)
+    if args.modelsim:
+        run_modelsim()
+    if args.modelsim_only:
+        run_modelsim()
