@@ -5,6 +5,7 @@ LeFLow is an open-source tool-flow that maps numerical computation models writte
 to synthesizable hardware. Our flow bridges Google's XLA compiler LegUp high-level synthesis tool to
 automatically generate verilog from a Tensorflow specification.
 
+See publication here: [https://arxiv.org/abs/1807.05317](https://arxiv.org/abs/1807.05317).
 ## Demo video
 
 [![LeFLow demo video](https://github.com/danielholanda/LeFlow/blob/master/img/LeFlow_thumbnail.png?raw=true)](https://www.youtube.com/watch?v=y76_RIyq4TM "LeFlow demo video")
@@ -71,9 +72,27 @@ To begin running examples with LeFlow tool, do the following:
 
 ## Authors
 
-* **Daniel Holanda Noronha** - *danielhn@ece.ubc.ca* 
-* **Bahar Salehpour** - *bahars@ece.ubc.ca* 
-* **Steve Wilton** - *stevew@ece.ubc.ca* 
+* **Daniel Holanda Noronha** - *danielhn-at-ece.ubc.ca* 
+* **Bahar Salehpour**
+* **Steve Wilton**
+
+## Citing LeFlow
+
+Please cite LeFlow in your publications if it helps your research work:
+
+```
+@ARTICLE{leflow,
+     author = {{Noronha}, D.~H. and {Salehpour}, B. and {Wilton}, S.~J.~E.},
+     title = "{LeFlow: Enabling Flexible FPGA High-Level Synthesis of Tensorflow Deep Neural Networks}",
+     journal = {ArXiv e-prints},
+     archivePrefix = "arXiv",
+     eprint = {1807.05317},
+     keywords = {Computer Science - Machine Learning, Statistics - Machine Learning},
+     year = 2018,
+     month = jul,
+     adsurl = {http://adsabs.harvard.edu/abs/2018arXiv180705317N}
+} 
+```
 
 ## License
 
