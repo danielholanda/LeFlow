@@ -22,7 +22,7 @@ LeFlow makes some minor changes on Tensorflow to ensure that only Kernels suppor
 ```
 sudo apt-get install python-pip
 sudo python -m pip install --upgrade pip
-sudo pip install tensorflow-1.6.0-cp27-cp27mu-linux_x86_64.whl --ignone-installed six
+sudo pip install tensorflow-1.6.0-cp27-cp27mu-linux_x86_64.whl --ignore-installed six
 ```
 The whl file and instruction for compiling Tensorflow from scratch can be found on the src/tensorflow folder.  
 
