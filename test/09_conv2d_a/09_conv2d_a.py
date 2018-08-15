@@ -24,8 +24,6 @@
 
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 import string
 import sys
 sys.path.append('../../src')
