@@ -134,9 +134,14 @@ def run_leflow(tf_file,tool_path):
 ####################################
 ############# Test Flow ############
 ####################################
-def run_modelsim():
+def run_modelsim(tf_file):
     """ Runs modelsim to test results """
     print("INFO: Starting Modelsim...")
+
+    # Creates project name based on input file
+    project_name=tf_file[:-3]
+    project_folder=project_name+"_files/"
+    print(project_folder)
 
     command = "make v -C {}".format(project_folder)
     modelsim_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None, shell=True)
@@ -194,6 +199,6 @@ if __name__ == '__main__':
     if not args.modelsim_only:
         run_leflow(args.file_name,tool_path)
     if args.modelsim:
-        run_modelsim()
+        run_modelsim(args.file_name)
     if args.modelsim_only:
-        run_modelsim()
+        run_modelsim(args.file_name)
