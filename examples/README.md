@@ -19,6 +19,10 @@ In this example the MNIST digit recognition database is trained offline using Te
 
 After running Modelsim, you can check the generated output at classificationMNIST_files/memory_dump.txt.
 
+A demo for a slighly more complex nexwork can be seen in the video below.
+
+[![LeFlow demo video](https://github.com/danielholanda/LeFlow/blob/master/img/Demo1_thumbnail.png?raw=true)](https://www.youtube.com/watch?v=P5Dml4IDm7k "LeFlow demo video")
+
 
 ## convolutionLenna
 
