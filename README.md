@@ -6,9 +6,13 @@ to synthesizable hardware. Our flow bridges Google's XLA compiler LegUp high-lev
 automatically generate verilog from a Tensorflow specification.
 
 See publication here: [https://arxiv.org/abs/1807.05317](https://arxiv.org/abs/1807.05317).
-## Demo video
+## Demo 1 - Overview
 
 [![LeFLow demo video](https://github.com/danielholanda/LeFlow/blob/master/img/LeFlow_thumbnail.png?raw=true)](https://www.youtube.com/watch?v=y76_RIyq4TM "LeFlow demo video")
+
+## Demo 2 - DNN for Classifying Google's Quick Draw Dataset
+
+[![LeFlow Quick Draw Demo](https://github.com/danielholanda/LeFlow/blob/master/img/Demo2_thumbnail.png?raw=true)](https://www.youtube.com/watch?v=eHeqenSj0VQ "LeFlow Quick Draw Demo")
 
 ## Installing dependencies
 
