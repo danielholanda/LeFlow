@@ -11,13 +11,13 @@ See publication here: [https://arxiv.org/abs/1807.05317](https://arxiv.org/abs/1
 ### Demo 1 - Overview
 
 <a href="https://www.youtube.com/watch?v=y76_RIyq4TM">
-    <img src="https://github.com/danielholanda/LeFlow/blob/master/img/LeFlow_thumbnail.png?raw=true" title="LeFlow Overview Demo" width="75%">.
+    <img src="https://github.com/danielholanda/LeFlow/blob/master/img/LeFlow_thumbnail.png?raw=true" title="LeFlow Overview Demo" width="75%">
 </a>
 
 ### Demo 2 - DNN for Classifying Google's Quick Draw Dataset
 
 <a href="https://www.youtube.com/watch?v=eHeqenSj0VQ">
-    <img src="https://github.com/danielholanda/LeFlow/blob/master/img/Demo2_thumbnail.png?raw=true" title="LeFlow Quick Draw Demo" width="75%">.
+    <img src="https://github.com/danielholanda/LeFlow/blob/master/img/Demo2_thumbnail.png?raw=true" title="LeFlow Quick Draw Demo" width="75%">
 </a>
 
 ## Installing dependencies
