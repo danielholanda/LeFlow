@@ -1,4 +1,5 @@
 
+**[A demo of LeFLow will be presented at [FPT18](http://www.fpt18.sakura.ne.jp/program.html#demo) on Dec 12th in Naha, Japan]**
 # LeFlow
 
 LeFLow is an open-source tool-flow that maps numerical computation models written in Tensorflow
