@@ -1740,7 +1740,10 @@ Status IrEmitter::HandleReduce(HloInstruction* reduce) {
   auto init_value = reduce->mutable_operand(1);
   gtl::ArraySlice<int64> dimensions(reduce->dimensions());
   HloComputation* function = reduce->to_apply();
-  if (!options::VectorizedReduceDisabled(hlo_module_config_)) {
+
+  // prevent vectorization
+  //if (!options::VectorizedReduceDisabled(hlo_module_config_)) {
+  if (false){
     string vectorization_failure_reason;
     TF_ASSIGN_OR_RETURN(
         bool vectorization_successful,
