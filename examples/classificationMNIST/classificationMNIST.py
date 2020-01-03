@@ -28,8 +28,10 @@ import sys
 sys.path.append('../../src')
 import processMif as mif
 
+tensorflow.logging.set_verbosity(tensorflow.logging.ERROR)
+
 # Load the MNIST data set
-mnist_data = input_data.read_data_sets("MNIST_data/", one_hot=True)
+mnist_data = input_data.read_data_sets("./MNIST_data/", one_hot=True)
 
 # The basic MLP graph
 x = tensorflow.placeholder(tensorflow.float32, shape=[None, 784])
